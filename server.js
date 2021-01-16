@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 
 const connectDB = require('./config/db');
-const register= require('./routes/auth')
+const auth= require('./routes/auth')
  
 const app = express()
 
@@ -17,4 +17,4 @@ app.listen(PORT, () => {
 })
 
 
-app.use('/',register)
+app.use('/',auth)

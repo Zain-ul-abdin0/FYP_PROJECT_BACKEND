@@ -1,28 +1,33 @@
 const jwt = require("jsonwebtoken");
-const bycrypt=require('bcryptjs')
-const User= require('../models/User')
-exports.register=  async function (req,res,next) {
-  const emailExist = await User.findOne({email: req.body.email})
-  if(emailExist){
-     res.status(400).json({"error":'Email already Exist'}) 
+const bycrypt = require('bcryptjs')
+const User = require('../models/User')
+async function signUp(req, res, next) {
+  const emailExist = await User.findOne({
+    email: req.body.email
+  })
+  if (emailExist) {
+    res.status(400).json({
+      "error": 'Email already Exist'
+    })
   }
   const salt = await bycrypt.genSalt(10);
   hashpassword = await bycrypt.hash(req.body.password, salt)
-  const user =  new User({
+  const user = new User({
     name: req.body.name,
     email: req.body.email,
     password: hashpassword
   })
-  try{
+  try {
     const userSignup = await user.save()
     const payload = {
       user: {
         id: userSignup.id
       }
     };
-    jwt.sign(payload,"anystring",{expiresIn: 10000},function(err, token)
-    {
-      if(err){
+    jwt.sign(payload, "anystring", {
+      expiresIn: 10000
+    }, function (err, token) {
+      if (err) {
         res.send(err)
       }
       res.status(200).json({
@@ -30,8 +35,43 @@ exports.register=  async function (req,res,next) {
         userSignup
       })
     })
-  } 
-  catch(err){
-    res.status(400).json({'error':err})
+  } catch (err) {
+    res.status(400).json({
+      'error': err
+    })
   }
+}
+
+
+//Login Controller
+async function login(req,res,next){
+  const emailExist = await User.findOne({email: req.body.email})
+  if(!emailExist){
+    res.status(400).json({error:"Email not Found"})
+  }
+  const checkpassword = await bycrypt.compare(req.body.password, emailExist.password)
+  if(!checkpassword){
+    res.status(400).json({error:"Password mismatch"})
+  }
+  const token = jwt.sign({_id: emailExist.id},'anystring')
+  res.header('Authorization',token).json({'Token':token})
+
+  
+}
+
+async function getCurrentUser(req,res){
+  console.log(req.user)
+  try {
+    const user = await User.findById(req.user._id);
+
+    res.json(user);
+  } catch (e) {
+    res.send({ message: "Error in Fetching user" });
+  }
+}
+
+module.exports = {
+  signUp,
+  login,
+  getCurrentUser,
 }
